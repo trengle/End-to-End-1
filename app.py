@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, redirect
+from flask_cors import CORS
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -9,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app) # allow S3 frontend to call this API
 
 # Postgres Connection
 conn = psycopg2.connect(
@@ -27,87 +29,61 @@ with conn:
                         id SERIAL PRIMARY KEY,
                         message TEXT NOT NULL);
                     """)
-
-@app.route("/")
-def index():
+# API Routes
+@app.get("/api/greetings/latest")
+def get_latest():
     with conn:
         with conn.cursor() as cur:
             cur.execute("""
-                        SELECT message 
-                        FROM greetings
-                        ORDER BY id DESC
-                        LIMIT 1                        
-                        """)
+                SELECT message
+                FROM greetings
+                ORDER BY id DESC
+                LIMIT 1
+            """)
             row = cur.fetchone()
-            if row:
-                latest = row[0]
-            else:
-                latest = "No greetings yet!"
-            
-    return f"""
-        <h1>{latest}</h1> 
-        
-        <form action="/submit" method="POST"> 
-            <input type="text" name="greeting" placeholder="Type something..." required> 
-            <button type="submit">Submit</button> 
-        </form> 
+
+    latest = row[0] if row else None
+    return jsonify({"latest": latest})
 
 
-
-        <!--
-            <form action="/delete" method="POST"> 
-                <button type="submit">Clear</button> 
-            </form> 
-        -->
-        
-        <button id="deleteBtn">Delete</button>
-
-        <script>
-        document.getElementById('deleteBtn')
-        .addEventListener('click', async () => {{
-            await fetch('/delete', {{ method: 'DELETE' }});
-            window.location.reload();
-        }});
-        </script>
-    """
-
-@app.get('/greetings')
+@app.get("/api/greetings")
 def get_all_greetings():
-        with conn:
-            with conn.cursor() as cur:
-                try:
-                    cur.execute("SELECT * FROM greetings")
-                    rows = cur.fetchall()
-                    return jsonify(rows), 200
-                except Exception as e:
-                    logging.error(f"Error retrieving rows: {e}")
-                    return jsonify({ "mssage": "Failed to retrieve rows."}), 500
-
-# Posts the new greetings to the database
-@app.route("/submit", methods=["POST"])
-def submit():
-    text = request.form["greeting"] # grabs user input from html
     with conn:
         with conn.cursor() as cur:
-            try:
-                cur.execute("""
-                            INSERT INTO greetings (message) 
-                            VALUES (%s)""", (text,))
-                logging.info("Successfully updated database.")
-                return redirect("/") # sends user back to homepage
-            except Exception as e:
-                logging.error(f"Error updating database {e}")
-                return jsonify({"message": "Failed to update database."})
+            cur.execute("SELECT id, message FROM greetings ORDER BY id DESC")
+            rows = cur.fetchall()
 
-# Deletes greetings from database
-@app.route("/delete", methods=["DELETE"])
-def delete():
+    greetings = [{"id": r[0], "message": r[1]} for r in rows]
+    return jsonify(greetings)
+
+
+@app.post("/api/greetings")
+def create_greeting():
+    data = request.get_json()
+    message = data.get("message")
+
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+
     with conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM greetings;")
-            logging.info("Deleted all messages from database")
-    # return redirect("/")
-    return jsonify({"status": "ok"})
+            cur.execute(
+                "INSERT INTO greetings (message) VALUES (%s) RETURNING id",
+                (message,)
+            )
+            new_id = cur.fetchone()[0]
+
+    return jsonify({"id": new_id, "message": message}), 201
+
+
+@app.delete("/api/greetings")
+def delete_greetings():
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM greetings")
+
+    return jsonify({"status": "deleted"})
+
 
 if __name__ == "__main__":
     app.run(debug=True)

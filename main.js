@@ -1,0 +1,45 @@
+const API_BASE = "http://127.0.0.1:5000/api";
+
+const latestEl = document.getElementById("latest");
+const form = document.getElementById("greeting-form");
+const input = document.getElementById("greeting-input");
+const deleteBtn = document.getElementById("delete-btn");
+
+// Load the latest greeting when the page opens
+function loadLatest() {
+  fetch(`${API_BASE}/greetings/latest`)
+    .then(res => res.json())
+    .then(data => {
+      latestEl.textContent = data.latest || "No greetings yet!";
+    })
+    .catch(() => {
+      latestEl.textContent = "Error loading greeting";
+    });
+}
+
+// Handle form submission (POST)
+form.addEventListener("submit", (e) => {
+  e.preventDefault(); // stop the browser from doing a normal form POST
+
+  const message = input.value.trim();
+  if (!message) return;
+
+  fetch(`${API_BASE}/greetings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
+  })
+    .then(() => {
+      input.value = "";
+      loadLatest(); 
+    });
+});
+
+// Handle delete button (DELETE)
+deleteBtn.addEventListener("click", () => {
+  fetch(`${API_BASE}/greetings`, { method: "DELETE" })
+    .then(() => loadLatest());
+});
+
+// Initial load
+loadLatest();
