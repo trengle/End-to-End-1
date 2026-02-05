@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_URL = "http://54.153.106.3:5000"; // aws
 
 const latestEl = document.getElementById("latest");
 const form = document.getElementById("greeting-form");
