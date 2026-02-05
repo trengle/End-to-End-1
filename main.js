@@ -1,4 +1,4 @@
-const API_URL = "http://54.153.106.3:5000"; // aws
+const API_BASE = "http://54.153.106.3:5000"; // AWS backend
 
 const latestEl = document.getElementById("latest");
 const form = document.getElementById("greeting-form");
@@ -7,7 +7,7 @@ const deleteBtn = document.getElementById("delete-btn");
 
 // Load the latest greeting when the page opens
 function loadLatest() {
-  fetch(`${API_BASE}/greetings/latest`)
+  fetch(`${API_BASE}/api/greetings/latest`)
     .then(res => res.json())
     .then(data => {
       latestEl.textContent = data.latest || "No greetings yet!";
@@ -19,25 +19,25 @@ function loadLatest() {
 
 // Handle form submission (POST)
 form.addEventListener("submit", (e) => {
-  e.preventDefault(); // stop the browser from doing a normal form POST
+  e.preventDefault();
 
   const message = input.value.trim();
   if (!message) return;
 
-  fetch(`${API_BASE}/greetings`, {
+  fetch(`${API_BASE}/api/greetings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message })
   })
     .then(() => {
       input.value = "";
-      loadLatest(); 
+      loadLatest();
     });
 });
 
 // Handle delete button (DELETE)
 deleteBtn.addEventListener("click", () => {
-  fetch(`${API_BASE}/greetings`, { method: "DELETE" })
+  fetch(`${API_BASE}/api/greetings`, { method: "DELETE" })
     .then(() => loadLatest());
 });
 
