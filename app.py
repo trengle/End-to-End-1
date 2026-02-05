@@ -2,23 +2,20 @@ from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 import psycopg2
 import os
-from dotenv import load_dotenv
 import logging
 
 logging.basicConfig(level=logging.INFO)
-
-load_dotenv()
 
 app = Flask(__name__)
 CORS(app) # allow S3 frontend to call this API
 
 # Postgres Connection
 conn = psycopg2.connect(
-    database="postgres",
-    user="postgres",
+    database=os.environ.get("DB_NAME", "postgres"),
+    user=os.environ.get("DB_USER", "postgres"),
     password=os.environ["DB_PW"],
-    host="localhost",
-    port=5432
+    host=os.environ.get("DB_HOST", "db"),
+    port=os.environ.get("DB_PORT", 5432)
 )
 
 # Create initial table if it doesn't exist
@@ -84,6 +81,5 @@ def delete_greetings():
 
     return jsonify({"status": "deleted"})
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
