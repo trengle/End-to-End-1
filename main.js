@@ -1,4 +1,4 @@
-const API_BASE = "http://54.153.106.3:5000"; // AWS backend
+const API_BASE = "http://54.153.106.3:5000"; // AWS backend - tested
 
 const latestEl = document.getElementById("latest");
 const form = document.getElementById("greeting-form");
