@@ -1,5 +1,5 @@
-const API_BASE = "http://54.153.106.3:5000"; // AWS backend - tested
-
+const EC2_IP = "54.183.97.74"
+const API_BASE = `http://${EC2_IP}:5000`; // AWS backend - tested 
 const latestEl = document.getElementById("latest");
 const form = document.getElementById("greeting-form");
 const input = document.getElementById("greeting-input");
